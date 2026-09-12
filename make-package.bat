@@ -1,21 +1,21 @@
 @echo off
-REM Double-click this file to run the offline checks.
-REM The window stays open at the end so you can actually read the result.
+REM Double-click this to build the zip file you send to the next person.
+REM Your keys and your saved sessions are left out of it.
 
 cd /d "%~dp0"
 
 set "PY=%~dp0.venv\Scripts\python.exe"
 if not exist "%PY%" set "PY=python"
 
-echo Running the offline checks. Nothing connects, nothing is spent.
+echo Building the handover zip.
 echo.
 
-"%PY%" selftest.py
+"%PY%" package.py
 if errorlevel 9009 goto nosetup
 
 echo.
 echo ============================================================
-echo Finished. Read the result above, then press any key to close.
+echo Press any key to close.
 echo ============================================================
 pause >nul
 exit /b
@@ -23,7 +23,6 @@ exit /b
 :nosetup
 echo.
 echo I could not find Python on this computer.
-echo.
-echo Double-click setup.bat first. It installs everything for you.
+echo Double-click setup.bat first.
 echo.
 pause >nul

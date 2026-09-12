@@ -1,0 +1,62 @@
+===========================================================================
+  CONTENT ENGINE - START HERE
+===========================================================================
+
+A Slack bot you send a rough post to. It asks about the parts that need it,
+then writes a finished LinkedIn post and an Instagram hook plus caption.
+
+
+WHAT TO DO
+---------------------------------------------------------------------------
+
+  1. Double-click  setup.bat
+
+     It installs everything and opens a file for your keys. It tells you
+     what is wrong if anything is.
+
+  2. Double-click  run-bot.bat
+
+     Leave that black window open. Message the bot in Slack.
+
+That is the whole thing.
+
+
+YOU WILL NEED FOUR KEYS
+---------------------------------------------------------------------------
+
+  SLACK_BOT_TOKEN    from your Slack app, starts with  xoxb-
+  SLACK_APP_TOKEN    from your Slack app, starts with  xapp-
+  GROK_API_KEY       from console.x.ai, starts with    xai-
+  ZERNIO_API_KEY     from your Zernio dashboard, starts with  sk_
+
+  README.md has step-by-step pictures-in-words for making the Slack app.
+  It is the only fiddly part, and you only do it once.
+
+  GROK_API_KEY can be free. openrouter.ai/keys gives you a free Grok, and
+  README.md shows the two extra lines to add if you use it.
+
+
+IF SOMETHING GOES WRONG
+---------------------------------------------------------------------------
+
+  Double-click  check-setup.bat
+
+  It tests every part and says, in plain English, what to fix.
+  Double-click  edit-secrets.bat  to correct a key.
+
+
+THE FILES YOU WILL WANT TO EDIT
+---------------------------------------------------------------------------
+
+  voice.md     your writing rules. This is the one that changes the output.
+  prompts/     the instruction files for writing and self-critique.
+
+  Neither is code. Edit, restart the bot, the writing changes.
+
+
+NOTHING IS PUBLISHED UNTIL YOU SAY SO
+---------------------------------------------------------------------------
+
+  The bot starts in DRY RUN. It does all the work and shows you the posts
+  but publishes nothing. Leave it that way until you trust it. To go live,
+  run edit-secrets.bat and change the last line to  DRY_RUN=false

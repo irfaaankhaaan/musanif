@@ -10,13 +10,23 @@ You talk to it in a direct message. It runs on your laptop.
 
 ## One-time setup
 
-### 1. Install the Python packages
+### 1. Run the installer
 
-Open a terminal in this folder and run:
+Double-click **`setup.bat`**.
 
-```
-pip install -r requirements.txt
-```
+It finds Python, installs everything into a `.venv` folder inside this one
+(nothing is installed into the rest of your computer), creates your `.env`
+secrets file, opens it for you, and then checks the whole setup and tells you
+what is still missing.
+
+If it says Python is not installed, get it from
+<https://python.org/downloads> and **tick "Add python.exe to PATH"** on the
+first screen of the installer. That box is easy to miss and nothing works
+without it. Then run `setup.bat` again.
+
+> Prefer to do it by hand? `pip install -r requirements.txt` still works, and
+> the other `.bat` files fall back to your system Python if there is no
+> `.venv` folder.
 
 ### 2. Create the Slack app
 
@@ -93,15 +103,17 @@ publishes nothing. Leave it on until you trust it.
 ## Running it
 
 **Do not double-click the `.py` files.** Windows runs them, then closes the
-window instantly, so you never get to read what happened. Use these three
-instead. Double-clicking them is fine, they keep the window open.
+window instantly, so you never get to read what happened. Use these instead.
+Double-clicking them is fine, they keep the window open.
 
 | Double-click this | What it does |
 |---|---|
+| `setup.bat` | **first time only.** Installs everything and sets up your keys |
 | `edit-secrets.bat` | opens your `.env` in Notepad so you can paste your keys in |
 | `check-setup.bat` | checks every part of the setup and says what to fix |
 | `run-selftest.bat` | runs the offline checks. Connects to nothing, spends nothing |
 | `run-bot.bat` | starts the bot for real |
+| `make-package.bat` | builds the zip you hand to the next person |
 
 > **A running bot looks like it is doing nothing.** After it prints
 > `Bolt app is running!` the window sits still and stays blank. That is correct.
@@ -187,10 +199,35 @@ unchanged: one post, with its hook in the first line as always.
 
 ---
 
+## Giving it to someone else
+
+Double-click **`make-package.bat`**. It builds a dated zip file, for example
+`musanif-2026-09-12.zip`, that holds everything the next person needs and
+nothing they should not have.
+
+Left out of the zip: your `.env` keys, your saved `sessions/`, the downloaded
+`media_cache/`, and the installed `.venv` packages (they get rebuilt by
+`setup.bat` on the other machine).
+
+Before it writes the zip it scans every file for anything shaped like a real
+Slack, xAI, OpenRouter or Zernio key, and refuses to build if it finds one.
+That is the reason to use it instead of right-clicking the folder and choosing
+*Send to > Compressed folder*, which would package your `.env` along with
+everything else.
+
+Send them the one zip file. They unzip it, read `START-HERE.txt`, and
+double-click `setup.bat`. They will need their own four keys: the Slack app
+has to be created in their own workspace, and keys are per-person.
+
+---
+
 ## The files
 
 | File | What it is |
 |---|---|
+| `START-HERE.txt` | the short version of this file, for whoever you hand it to |
+| `setup.bat` | **run this first.** Installs everything, sets up your keys |
+| `make-package.bat` | builds the zip you hand to the next person, minus your keys |
 | `app.py` | the Slack connection and the router that reads your messages |
 | `config.py` | **every setting and secret.** The Grok model name lives here |
 | `session.py` | the bot's memory of where you are in the conversation |

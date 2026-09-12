@@ -5,8 +5,13 @@ REM so you can read it.
 
 cd /d "%~dp0"
 
-python -u checkup.py
-if errorlevel 9009 goto nopython
+REM Prefer the packages setup.bat installed into .venv. Fall back to whatever
+REM Python is on the machine, for anyone who installed them the manual way.
+set "PY=%~dp0.venv\Scripts\python.exe"
+if not exist "%PY%" set "PY=python"
+
+"%PY%" -u checkup.py
+if errorlevel 9009 goto nosetup
 
 echo.
 echo ============================================================
@@ -15,10 +20,10 @@ echo ============================================================
 pause >nul
 exit /b
 
-:nopython
+:nosetup
 echo.
 echo I could not find Python on this computer.
-echo Install it from https://python.org/downloads and tick
-echo "Add python.exe to PATH" during setup.
+echo.
+echo Double-click setup.bat first. It installs everything for you.
 echo.
 pause >nul

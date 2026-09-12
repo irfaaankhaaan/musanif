@@ -4,12 +4,15 @@ REM Leave the window open while you use it. Closing the window stops the bot.
 
 cd /d "%~dp0"
 
+set "PY=%~dp0.venv\Scripts\python.exe"
+if not exist "%PY%" set "PY=python"
+
 echo Starting the content agent.
 echo Leave this window open. Close it, or press Ctrl+C, to stop the bot.
 echo.
 
-python app.py
-if errorlevel 9009 goto nopython
+"%PY%" app.py
+if errorlevel 9009 goto nosetup
 
 echo.
 echo ============================================================
@@ -18,11 +21,10 @@ echo ============================================================
 pause >nul
 exit /b
 
-:nopython
+:nosetup
 echo.
 echo I could not find Python on this computer.
 echo.
-echo Install it from https://python.org/downloads and tick the box that says
-echo "Add python.exe to PATH" during setup. Then run this file again.
+echo Double-click setup.bat first. It installs everything for you.
 echo.
 pause >nul
