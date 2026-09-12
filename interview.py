@@ -53,7 +53,7 @@ OPENING = "opening"
 CLARIFY = "clarify"
 PROBE = "probe"
 
-# Used when Claude owes us a question about the subject and did not send one.
+# Used when Grok owes us a question about the subject and did not send one.
 TOPIC_QUESTION = "What is the main thing you want this post to say?"
 
 
@@ -99,7 +99,7 @@ def respond(live, reply: str) -> Step:
     pending = live.interview[-1]["question"] if live.interview else OPENING_QUESTION
     asked = questions_asked(live)
 
-    decision = _ask_claude(live, pending, reply, asked)
+    decision = _ask_grok(live, pending, reply, asked)
 
     # Whatever else happens, hold on to what it now thinks the post is saying.
     topic = str(decision.get("topic") or "").strip()
@@ -125,7 +125,7 @@ def respond(live, reply: str) -> Step:
         })
 
         # There is no material in a correction, so it can never be the thing
-        # that finishes the interview, whatever Claude says.
+        # that finishes the interview, whatever Grok says.
         if not question or _too_similar(question, pending):
             question = _handover_question(live)
 
@@ -159,9 +159,9 @@ def respond(live, reply: str) -> Step:
 
 
 # ---------------------------------------------------------------------------
-# Talking to Claude
+# Talking to Grok
 # ---------------------------------------------------------------------------
-def _ask_claude(live, pending: str, reply: str, asked: int) -> dict:
+def _ask_grok(live, pending: str, reply: str, asked: int) -> dict:
     system = (
         brain.load_prompt("interview")
         + "\n\n---\n\n# The person's voice and rules\n\n"
@@ -206,7 +206,7 @@ def _ask_claude(live, pending: str, reply: str, asked: int) -> dict:
         "Decide what their reply was, then decide what to do next.",
     ]
 
-    return brain.ask_claude(system, "\n".join(parts), want_json=True)
+    return brain.ask_grok(system, "\n".join(parts), want_json=True)
 
 
 # ---------------------------------------------------------------------------
@@ -216,7 +216,7 @@ def _single_question(question: str) -> str:
     """
     Guarantee one question, not two.
 
-    If Claude bolted a second question on, keep the first and drop the rest.
+    If Grok bolted a second question on, keep the first and drop the rest.
     """
     first_mark = question.find("?")
     if first_mark != -1 and "?" in question[first_mark + 1:]:
@@ -244,7 +244,7 @@ def _too_similar(new: str, old: str) -> bool:
 
 def _handover_question(live) -> str:
     """
-    The fallback, used when Claude owes us a question and has not produced a
+    The fallback, used when Grok owes us a question and has not produced a
     usable one. It hands the choice to you rather than guessing again, which is
     the right move at the exact moment the guessing has been going wrong.
     """
@@ -289,7 +289,7 @@ def build_brief(live) -> dict:
             corrections,
         ]
 
-    brief = brain.ask_claude(system, "\n".join(parts), want_json=True)
+    brief = brain.ask_grok(system, "\n".join(parts), want_json=True)
 
     # The keywords are what rules.py later uses to prove the specific detail
     # survived into the finished post, so they have to be usable strings.

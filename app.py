@@ -671,7 +671,7 @@ def handle_interview_answer(client, channel_id: str, live, text: str) -> None:
 
 def finish_interview(client, channel_id: str, live) -> None:
     """
-    The writing stage. Each platform gets its own prompt, its own Claude call,
+    The writing stage. Each platform gets its own prompt, its own Grok call,
     and its own self-critique. Neither post can see the other one.
     """
     # Move off the interview phase, otherwise your next message would be read

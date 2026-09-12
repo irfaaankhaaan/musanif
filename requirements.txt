@@ -1,7 +1,7 @@
 # Everything this bot needs. Install with:  pip install -r requirements.txt
 
 slack-bolt>=1.21.0      # the Slack framework (includes Socket Mode support)
-anthropic>=0.40.0       # the Claude API client, used for all the writing
+openai>=1.60.0          # the client for Grok's API, used for all the writing
 python-dotenv>=1.0.0    # reads your secrets out of the .env file
 requests>=2.32.0        # plain HTTP, used for Slack downloads and Zernio publishing
 Pillow>=10.0.0          # shrinks oversized images so uploads fit inside Zernio's limit

@@ -1,7 +1,7 @@
 """
 try-writing.py
 
-Writes both posts from a brief, in this window, with the real Claude. Use it to
+Writes both posts from a brief, in this window, with the real Grok. Use it to
 tune the four prompt files without touching Slack.
 
     python try-writing.py
@@ -94,7 +94,7 @@ def show(platform: str, voice: str) -> None:
 def main() -> None:
     voice = rules.load_voice()
     print(LINE)
-    print("WRITING BOTH POSTS  (real Claude, costs a few pennies)")
+    print("WRITING BOTH POSTS  (real Grok, costs a few pennies)")
     print(LINE)
     print("Same brief, two separate prompts, two separate sets of API calls.")
     print("Neither post can see the other one.")
