@@ -1,7 +1,7 @@
 """
 try-interview.py
 
-Runs just the interview, in this window, with the real Claude. Use it to tune
+Runs just the interview, in this window, with the real Grok. Use it to tune
 prompts/interview.md without touching Slack or restarting the bot.
 
 Edit prompts/interview.md, run this, see the difference. That loop takes
@@ -68,7 +68,7 @@ def run(interactive: bool, answers: list) -> None:
     live = session.start("U_LOCAL", "D_LOCAL", voice=rules.load_voice())
 
     print(LINE)
-    print("INTERVIEW  (real Claude, costs a few pennies)")
+    print("INTERVIEW  (real Grok, costs a few pennies)")
     print(LINE)
     if interactive:
         print("Answer normally. To test a push-back, type something like:")

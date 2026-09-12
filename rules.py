@@ -3,7 +3,7 @@ rules.py
 
 The hard gate. Every draft passes through here before you see it.
 
-The prompts tell Claude the rules. This file assumes Claude will sometimes
+The prompts tell Grok the rules. This file assumes Grok will sometimes
 break them anyway, and checks. If a draft fails, the bot rewrites it and checks
 again. You are not shown a post that breaks a rule.
 
@@ -19,7 +19,7 @@ import config
 # ---------------------------------------------------------------------------
 
 def load_voice() -> str:
-    """The whole of voice.md, as text, to hand to Claude."""
+    """The whole of voice.md, as text, to hand to Grok."""
     if not config.VOICE_FILE.exists():
         raise FileNotFoundError(
             "voice.md is missing from the project folder. That file holds your "
@@ -157,7 +157,7 @@ def _has_emoji(text: str) -> bool:
 
 def scrub_characters(post: str, voice: str) -> str:
     """
-    A mechanical fix for banned characters only, used after Claude has failed
+    A mechanical fix for banned characters only, used after Grok has failed
     to remove them on its own. An em dash becomes a period or a comma depending
     on what follows it. Words are never touched, only punctuation.
     """

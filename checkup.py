@@ -94,33 +94,37 @@ else:
         result(False, f"could not reach Slack: {error}")
 
 
-# 3. Anthropic ------------------------------------------------------------
-print("\n3. Claude")
-if any("ANTHROPIC" in p for p in env_problems):
+# 3. Grok -----------------------------------------------------------------
+print("\n3. Grok")
+if any("GROK" in p for p in env_problems):
     print("         Skipped, the key is not filled in yet.")
 else:
-    import anthropic
+    import openai
 
     import brain
 
     try:
-        # A deliberately tiny request. This costs a fraction of a penny and is
-        # the only way to know the key really works.
-        reply = brain.client.messages.create(
+        # A deliberately tiny request. This costs a fraction of a penny (nothing
+        # at all on the free tier) and is the only way to know the key works.
+        reply = brain.client.chat.completions.create(
             model=config.MODEL,
             max_tokens=16,
             messages=[{"role": "user", "content": "Reply with the single word: ready"}],
         )
-        said = "".join(b.text for b in reply.content if b.type == "text").strip()
+        said = (reply.choices[0].message.content or "").strip()
         result(True, f"the API key works and {config.MODEL} replied '{said}'")
-    except anthropic.AuthenticationError:
-        result(False, "Anthropic rejected the API key",
-               "Check ANTHROPIC_API_KEY in .env, from console.anthropic.com.")
-    except anthropic.NotFoundError:
-        result(False, f"Anthropic does not know the model '{config.MODEL}'",
+    except openai.AuthenticationError:
+        result(False, "Grok rejected the API key",
+               "Check GROK_API_KEY in .env, from console.x.ai.")
+    except openai.PermissionDeniedError:
+        result(False, "Grok refused the request",
+               "The key is real but the account has no credit, or no access to\n"
+               f"'{config.MODEL}'. Check your xAI console.")
+    except openai.NotFoundError:
+        result(False, f"Grok does not know the model '{config.MODEL}'",
                "Open config.py and update the MODEL line near the top.")
     except Exception as error:
-        result(False, f"could not reach Claude: {error}")
+        result(False, f"could not reach Grok at {config.GROK_BASE_URL}: {error}")
 
 
 # 4. Zernio, the thing that actually publishes ----------------------------

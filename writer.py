@@ -5,8 +5,8 @@ Where the posts get written.
 
 Three things happen here, in order, for each platform:
 
-  1. WRITE      one Claude call, using that platform's own prompt file.
-  2. CRITIQUE   a second Claude call that reads the draft hard, lists what is
+  1. WRITE      one Grok call, using that platform's own prompt file.
+  2. CRITIQUE   a second Grok call that reads the draft hard, lists what is
                 wrong with it, and rewrites it once. You only see the result.
   3. GATE       rules.py checks the finished text. If a rule is broken, a third
                 targeted call fixes exactly that, and we check again.
@@ -22,7 +22,7 @@ import rules
 
 
 def _brief_for_prompt(brief: dict) -> str:
-    """The content brief, laid out for Claude to write from."""
+    """The content brief, laid out for Grok to write from."""
     keywords = brief.get("detail_keywords", [])
     must_appear = "\n".join(f'  - "{word}"' for word in keywords) or "  (none given)"
 
@@ -61,7 +61,7 @@ def _rules_for_prompt(voice: str) -> str:
 # ---------------------------------------------------------------------------
 def write_post(platform: str, brief: dict, voice: str, note: str = "") -> str:
     """
-    One Claude call, using prompts/<platform>_write.md.
+    One Grok call, using prompts/<platform>_write.md.
 
     `note` is your feedback when you press Rewrite ("too long", "hook is
     weak"). It goes in as an instruction, not as a suggestion.
@@ -77,7 +77,7 @@ def write_post(platform: str, brief: dict, voice: str, note: str = "") -> str:
             "requirement, not a suggestion. Fix it."
         )
 
-    return _clean(brain.ask_claude(system, user))
+    return _clean(brain.ask_grok(system, user))
 
 
 # ---------------------------------------------------------------------------
@@ -95,7 +95,7 @@ def critique_post(platform: str, draft: str, brief: dict, voice: str) -> tuple[s
         f"{_brief_for_prompt(brief)}\n---\n\n# The draft to critique\n\n{draft}"
     )
 
-    reply = brain.ask_claude(system, user, want_json=True)
+    reply = brain.ask_grok(system, user, want_json=True)
     improved = _clean(str(reply.get("rewrite") or ""))
     found = [str(item) for item in (reply.get("critique") or [])]
 
@@ -132,7 +132,7 @@ def fix_problems(platform: str, post: str, problems: list[str], brief: dict, voi
         f"These strings must still appear word for word: {keywords or '(none)'}."
     )
 
-    return _clean(brain.ask_claude(system, user))
+    return _clean(brain.ask_grok(system, user))
 
 
 # ---------------------------------------------------------------------------
@@ -155,7 +155,7 @@ def write_instagram(brief: dict, voice: str, note: str = "") -> tuple[str, str]:
             "requirement, not a suggestion. Fix it."
         )
 
-    reply = brain.ask_claude(system, user, want_json=True)
+    reply = brain.ask_grok(system, user, want_json=True)
     return _clean(str(reply.get("hook") or "")), _clean(str(reply.get("caption") or ""))
 
 
@@ -168,7 +168,7 @@ def critique_instagram(hook: str, caption: str, brief: dict, voice: str) -> tupl
         f"---\n\n# The caption, which has to answer it\n\n{caption}"
     )
 
-    reply = brain.ask_claude(system, user, want_json=True)
+    reply = brain.ask_grok(system, user, want_json=True)
     found = [str(item) for item in (reply.get("critique") or [])]
     new_hook = _clean(str(reply.get("rewrite_hook") or ""))
     new_caption = _clean(str(reply.get("rewrite_caption") or ""))
@@ -290,7 +290,7 @@ def make_post(platform: str, brief: dict, voice: str, note: str = "") -> dict:
 # ---------------------------------------------------------------------------
 def _clean(text: str) -> str:
     """
-    Strip the wrapping Claude sometimes adds despite being told not to:
+    Strip the wrapping Grok sometimes adds despite being told not to:
     a code fence, or quote marks around the whole post.
     """
     text = text.strip()

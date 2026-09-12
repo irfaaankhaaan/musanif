@@ -16,18 +16,27 @@ load_dotenv(HERE / ".env")
 
 
 # ---------------------------------------------------------------------------
-# The Claude model
+# The Grok model
 # ---------------------------------------------------------------------------
-# One constant, used by every Claude call in the project. If a newer model
-# comes out, change this single line and the whole bot upgrades.
-MODEL = "claude-opus-5"
+# One constant, used by every Grok call in the project. If a newer model comes
+# out, change this single line and the whole bot upgrades.
+MODEL = os.getenv("GROK_MODEL", "grok-4-fast-reasoning")
 
-# How hard Claude thinks before answering.
-# "low" is fast and cheap, "high" is the default, "max" is slowest and best.
-# Writing is worth thinking about, so we use "high".
-EFFORT = "high"
+# Where the Grok API lives. The default is xAI's own API, which is what the
+# GROK_API_KEY from console.x.ai talks to.
+#
+# To use a free Grok instead, put these two lines in your .env:
+#   GROK_BASE_URL=https://openrouter.ai/api/v1
+#   GROK_MODEL=x-ai/grok-4-fast:free
+# and use an OpenRouter key (it starts with "sk-or-") as your GROK_API_KEY.
+GROK_BASE_URL = os.getenv("GROK_BASE_URL", "https://api.x.ai/v1").strip()
 
-# Safety ceiling on how long a single Claude reply can be. Posts are short,
+# How hard Grok thinks before answering, sent only if you fill it in.
+# Blank is the right answer for the grok-4 models: they decide for themselves
+# and reject the setting. The smaller grok-3-mini accepts "low" or "high".
+EFFORT = os.getenv("GROK_EFFORT", "").strip()
+
+# Safety ceiling on how long a single Grok reply can be. Posts are short,
 # so this is generous.
 MAX_TOKENS = 8000
 
@@ -37,7 +46,7 @@ MAX_TOKENS = 8000
 # ---------------------------------------------------------------------------
 SLACK_BOT_TOKEN = os.getenv("SLACK_BOT_TOKEN", "")
 SLACK_APP_TOKEN = os.getenv("SLACK_APP_TOKEN", "")
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+GROK_API_KEY = os.getenv("GROK_API_KEY", "")
 ZERNIO_API_KEY = os.getenv("ZERNIO_API_KEY", "")
 
 
@@ -83,13 +92,15 @@ def check_secrets(need_zernio: bool = False) -> list[str]:
     """
     problems = []
 
+    # Each row is (value, name, accepted prefix or prefixes, where to get it,
+    # whether it is required).
     keys = [
         (SLACK_BOT_TOKEN, "SLACK_BOT_TOKEN", "xoxb-",
          "Slack app > OAuth & Permissions > Bot User OAuth Token", True),
         (SLACK_APP_TOKEN, "SLACK_APP_TOKEN", "xapp-",
          "Slack app > Basic Information > App-Level Tokens", True),
-        (ANTHROPIC_API_KEY, "ANTHROPIC_API_KEY", "sk-ant-",
-         "console.anthropic.com > API keys", True),
+        (GROK_API_KEY, "GROK_API_KEY", ("xai-", "sk-or-"),
+         "console.x.ai > API keys, or openrouter.ai/keys for the free tier", True),
         (ZERNIO_API_KEY, "ZERNIO_API_KEY", "sk_",
          "your Zernio dashboard", need_zernio),
     ]
@@ -104,8 +115,9 @@ def check_secrets(need_zernio: bool = False) -> list[str]:
                 "paste it into the .env file."
             )
         elif not value.startswith(prefix):
+            wanted = prefix if isinstance(prefix, str) else " or ".join(prefix)
             problems.append(
-                f"{name} does not look right. It should start with '{prefix}'. "
+                f"{name} does not look right. It should start with '{wanted}'. "
                 f"Get it from {where}."
             )
 

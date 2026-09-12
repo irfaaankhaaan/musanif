@@ -89,7 +89,7 @@ class Session:
     topic: str = ""
 
     # Every time you told it the questions were wrong. Each entry is
-    # {said, note, rejected}. These are handed back to Claude on every later
+    # {said, note, rejected}. These are handed back to Grok on every later
     # question, which is what makes a correction stick for the rest of the
     # session rather than being obeyed once and forgotten.
     steers: list[dict] = field(default_factory=list)
@@ -104,10 +104,10 @@ class Session:
 
     def transcript(self) -> str:
         """
-        The interview as readable text, for feeding to Claude.
+        The interview as readable text, for feeding to Grok.
 
         A question you have not answered yet is left out. Showing it with an
-        empty answer invites Claude to fill the gap in for you, and an answer
+        empty answer invites Grok to fill the gap in for you, and an answer
         you never gave has no business ending up in the post.
         """
         lines = []

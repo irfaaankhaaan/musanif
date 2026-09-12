@@ -1,7 +1,7 @@
 """
 selftest.py
 
-Runs the bot's logic on your laptop with a pretend Slack and a pretend Claude,
+Runs the bot's logic on your laptop with a pretend Slack and a pretend Grok,
 so you can watch it work without connecting to anything and without spending
 money.
 
@@ -50,9 +50,9 @@ def send(message: str) -> None:
     app.route(FakeSlack(), "U_TEST", "D_TEST", message, [])
 
 
-class FakeClaude:
+class FakeGrok:
     """
-    Stands in for Claude. Returns canned answers in order, so we can test the
+    Stands in for Grok. Returns canned answers in order, so we can test the
     bot's own rules without an API key and without spending anything.
     """
 
@@ -63,7 +63,7 @@ class FakeClaude:
     def __call__(self, system, user, want_json=False):
         self.calls += 1
         if not self.answers:
-            raise AssertionError("The bot asked Claude more times than expected.")
+            raise AssertionError("The bot asked Grok more times than expected.")
         return self.answers.pop(0)
 
 
@@ -140,7 +140,7 @@ def check_rules():
 # ---------------------------------------------------------------------------
 def check_interview():
     """
-    Stage 3: the questions. Claude is faked here, so what we are really testing
+    Stage 3: the questions. Grok is faked here, so what we are really testing
     is the bot's own guarantees: one question at a time, no forced number of
     them, a way for you to stop them, and a correction that actually sticks.
     """
@@ -149,7 +149,7 @@ def check_interview():
     print(LINE)
 
     wrong = 0
-    real_ask = brain.ask_claude
+    real_ask = brain.ask_grok
     real_make = writer.make_post
 
     # These tests stop at the brief. Stub the writing so it does not run here,
@@ -172,7 +172,7 @@ def check_interview():
     print("\n  Test 1: the draft arrives nearly finished.")
     print("          One question should be allowed to be enough.\n")
 
-    brain.ask_claude = FakeClaude([
+    brain.ask_grok = FakeGrok([
         {"reply_type": "answer", "topic": "onboarding", "topic_clear": True,
          "enough": False, "question": "What was the field actually for?"},
         {"reply_type": "answer", "topic": "onboarding", "topic_clear": True,
@@ -201,7 +201,7 @@ def check_interview():
     session.clear()
 
     # -- Test 2: the runaway guard ------------------------------------------
-    print("\n  Test 2: Claude wants to ask forever.")
+    print("\n  Test 2: Grok wants to ask forever.")
     print(f"          The guard of {interview.SAFETY_CAP} should cut it off.\n")
 
     endless = [
@@ -209,7 +209,7 @@ def check_interview():
          "enough": False, "question": f"Follow-up number {n}?"}
         for n in range(1, interview.SAFETY_CAP + 4)
     ]
-    brain.ask_claude = FakeClaude(endless + [final_brief])
+    brain.ask_grok = FakeGrok(endless + [final_brief])
 
     send("new")
     for n in range(interview.SAFETY_CAP + 2):
@@ -228,7 +228,7 @@ def check_interview():
     # -- Test 3: you stop the questions yourself ----------------------------
     print("\n  Test 3: you type 'write' to stop the questions.\n")
 
-    brain.ask_claude = FakeClaude([
+    brain.ask_grok = FakeGrok([
         {"reply_type": "answer", "topic": "onboarding", "topic_clear": True,
          "enough": False, "question": "What was the field for?"},
         final_brief,
@@ -246,15 +246,15 @@ def check_interview():
         wrong += 1
 
     session.clear()
-    brain.ask_claude = real_ask
+    brain.ask_grok = real_ask
 
     # -- Test 4: two questions in one get trimmed to one --------------------
-    print("\n  Test 4: Claude bolts two questions together.")
+    print("\n  Test 4: Grok bolts two questions together.")
     print("          Only the first should survive.\n")
 
     greedy = "What was it before? And how long did the fix take?"
     trimmed = interview._single_question(greedy)
-    print(f"    Claude wrote : {greedy}")
+    print(f"    Grok wrote : {greedy}")
     print(f"    You would see: {trimmed}")
     if trimmed.count("?") == 1:
         print("  [ok   ] trimmed to a single question")
@@ -266,7 +266,7 @@ def check_interview():
     print("\n  Test 5: you tell it the questions are wrong.")
     print("          That must never be filed as an answer.\n")
 
-    brain.ask_claude = FakeClaude([
+    brain.ask_grok = FakeGrok([
         {"reply_type": "answer", "topic": "AI work", "topic_clear": True,
          "enough": False, "question": "How many hours did that save you?"},
         {"reply_type": "correction", "topic": "going from creative to building AI",
@@ -309,10 +309,10 @@ def check_interview():
     session.clear()
 
     # -- Test 6: the correction is ignored and the same question comes back -
-    print("\n  Test 6: after a correction Claude asks the same thing again.")
+    print("\n  Test 6: after a correction Grok asks the same thing again.")
     print("          The bot must not put that question to you.\n")
 
-    brain.ask_claude = FakeClaude([
+    brain.ask_grok = FakeGrok([
         {"reply_type": "answer", "topic": "AI work", "topic_clear": True,
          "enough": False, "question": "How many hours did that save you?"},
         {"reply_type": "correction", "topic": "my journey into building AI",
@@ -328,7 +328,7 @@ def check_interview():
 
     live = session.current()
     asked_now = live.interview[-1]["question"]
-    print("    Claude tried  : How many hours did that save?")
+    print("    Grok tried  : How many hours did that save?")
     print(f"    You were asked: {asked_now}")
     if "how many hours" not in asked_now.lower():
         print("  [ok   ] the repeat was caught and replaced")
@@ -337,7 +337,7 @@ def check_interview():
         wrong += 1
 
     session.clear()
-    brain.ask_claude = real_ask
+    brain.ask_grok = real_ask
     writer.make_post = real_make
 
     print()
@@ -353,7 +353,7 @@ def check_writing():
     """
     Stage 4: the write, critique and repair pipeline.
 
-    Claude is faked and made to misbehave on purpose: it writes a post with an
+    Grok is faked and made to misbehave on purpose: it writes a post with an
     em dash and a banned word, then the critique fails to remove them. What we
     are testing is that the gate catches it and the repair call fixes it, so a
     broken post never reaches you.
@@ -363,7 +363,7 @@ def check_writing():
     print(LINE)
 
     wrong = 0
-    real_ask = brain.ask_claude
+    real_ask = brain.ask_grok
     voice = rules.load_voice()
 
     brief = {
@@ -379,16 +379,16 @@ def check_writing():
     still_dirty = "Onboarding took 3 days — we fixed it. Now 40 minutes."
     clean = "Onboarding took 3 days. We cut it to 40 minutes by deleting one field."
 
-    brain.ask_claude = FakeClaude([
+    brain.ask_grok = FakeGrok([
         dirty,                                                    # the first draft
         {"critique": ["Tightened the opening."], "rewrite": still_dirty},  # critique misses the em dash
         clean,                                                    # the repair call fixes it
     ])
 
     result = writer.make_post("linkedin", brief, voice)
-    brain.ask_claude = real_ask
+    brain.ask_grok = real_ask
 
-    print("\n  Claude wrote          :", dirty)
+    print("\n  Grok wrote          :", dirty)
     print("  its critique returned :", still_dirty)
     print("  what the gate caught  :")
     for problem in result["repairs"]:
@@ -424,7 +424,7 @@ def check_writing():
     )
     clean_hook = "3 days to 40 minutes. One dead field."
 
-    brain.ask_claude = FakeClaude([
+    brain.ask_grok = FakeGrok([
         {"hook": hook_draft, "caption": caption_draft},
         {"critique": ["Tightened the caption."],
          "rewrite_hook": hook_draft,          # critique leaves the em dash in
@@ -433,9 +433,9 @@ def check_writing():
     ])
 
     result = writer.make_post("instagram", brief, voice)
-    brain.ask_claude = real_ask
+    brain.ask_grok = real_ask
 
-    print(f"  hook Claude wrote : {hook_draft}")
+    print(f"  hook Grok wrote : {hook_draft}")
     print(f"  hook you would see: {result['hook']}")
     print(f"  caption           : {result['post'].splitlines()[0]}...")
 
@@ -685,7 +685,7 @@ def check_review():
     print(LINE)
 
     wrong = 0
-    real_ask = brain.ask_claude
+    real_ask = brain.ask_grok
     real_make = writer.make_post
     slack = ButtonSlack()
 
@@ -769,7 +769,7 @@ def check_review():
         check("the saved file records the media filename", "cover.jpg" in body)
 
     writer.make_post = real_make
-    brain.ask_claude = real_ask
+    brain.ask_grok = real_ask
     session.clear()
 
     print()

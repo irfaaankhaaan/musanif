@@ -1,92 +1,119 @@
 """
 brain.py
 
-Every conversation with Claude goes through this one file.
+Every conversation with Grok goes through this one file.
 
 Two reasons it is separate. First, the model name, the effort level and the
 error messages live in one place instead of being scattered. Second, when
 something goes wrong with the API you get a sentence you can act on instead of
 a wall of red text.
+
+Grok speaks the same HTTP dialect as OpenAI, so we use the `openai` client
+library and just point it at xAI (or at any other host that serves Grok, such
+as OpenRouter's free tier). Which host is used is one line in config.py.
 """
 
 import json
 import re
 
-import anthropic
+import openai
 
 import config
 
-client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
+# The client refuses to be built with a blank key, which would crash the bot on
+# startup before it could tell you what is wrong. The placeholder lets it start;
+# config.check_secrets() then says the key is missing in plain language, and the
+# selftest can run with no key at all.
+client = openai.OpenAI(
+    api_key=config.GROK_API_KEY or "no-key-set",
+    base_url=config.GROK_BASE_URL,
+)
 
 
 class BrainError(Exception):
-    """A problem talking to Claude, already written in plain language."""
+    """A problem talking to Grok, already written in plain language."""
 
 
 # ---------------------------------------------------------------------------
 # The one call
 # ---------------------------------------------------------------------------
-def ask_claude(system: str, user: str, want_json: bool = False) -> str | dict:
+def ask_grok(system: str, user: str, want_json: bool = False) -> str | dict:
     """
-    Send one instruction to Claude and get the answer back.
+    Send one instruction to Grok and get the answer back.
 
     system : the standing instructions, loaded from a prompt file
     user   : the specific thing we want done this time
     want_json : if True, parse the reply as JSON and return a dictionary
     """
+    # Only reasoning models accept an effort level, so it is left out unless
+    # config.EFFORT is filled in.
+    extra = {"reasoning_effort": config.EFFORT} if config.EFFORT else {}
+
     try:
-        response = client.messages.create(
+        response = client.chat.completions.create(
             model=config.MODEL,
             max_tokens=config.MAX_TOKENS,
-            output_config={"effort": config.EFFORT},
-            system=system,
-            messages=[{"role": "user", "content": user}],
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            **extra,
         )
-    except anthropic.AuthenticationError:
+    except openai.AuthenticationError:
         raise BrainError(
-            "Anthropic would not accept the API key. Check ANTHROPIC_API_KEY in "
-            "your .env file, then restart the bot."
+            "Grok would not accept the API key. Check GROK_API_KEY in your .env "
+            "file, then restart the bot."
         )
-    except anthropic.RateLimitError:
+    except openai.PermissionDeniedError:
         raise BrainError(
-            "Anthropic is rate limiting us right now. Wait a minute, then send "
-            "your message again."
+            "Grok accepted the key but refused the request. The account behind "
+            "that key probably has no credit left, or is not allowed to use "
+            f"'{config.MODEL}'. Check your xAI console."
         )
-    except anthropic.NotFoundError:
+    except openai.RateLimitError:
         raise BrainError(
-            f"Anthropic does not recognise the model '{config.MODEL}'. Open "
-            "config.py and check the MODEL line near the top."
+            "Grok is rate limiting us right now. Wait a minute, then send your "
+            "message again."
         )
-    except anthropic.BadRequestError as error:
+    except openai.NotFoundError:
         raise BrainError(
-            "Anthropic rejected the request. This usually means the model name "
-            f"in config.py is out of date (it is currently '{config.MODEL}'). "
+            f"Grok does not recognise the model '{config.MODEL}'. Open config.py "
+            "and check the MODEL line near the top."
+        )
+    except openai.BadRequestError as error:
+        raise BrainError(
+            "Grok rejected the request. This usually means the model name in "
+            f"config.py is out of date (it is currently '{config.MODEL}'). "
             f"The technical detail was: {error}"
         )
-    except anthropic.APIConnectionError:
+    except openai.APIConnectionError:
         raise BrainError(
-            "Could not reach Anthropic at all. Check your internet connection "
-            "and try again."
+            f"Could not reach Grok at all ({config.GROK_BASE_URL}). Check your "
+            "internet connection and try again."
         )
-    except anthropic.APIStatusError as error:
+    except openai.APIStatusError as error:
         raise BrainError(
-            f"Anthropic had a problem on their side (error {error.status_code}). "
+            f"Grok had a problem on their side (error {error.status_code}). "
             "Wait a moment and try again."
         )
 
-    # Claude can decline a request on safety grounds. It is very unlikely for
+    if not response.choices:
+        raise BrainError("Grok sent back an empty reply. Try that message again.")
+
+    choice = response.choices[0]
+
+    # Grok can decline a request on safety grounds. It is very unlikely for
     # writing a LinkedIn post, but if it happens we say so rather than crash.
-    if response.stop_reason == "refusal":
+    if getattr(choice.message, "refusal", None) or choice.finish_reason == "content_filter":
         raise BrainError(
-            "Claude declined to answer that one. Try rewording the idea, or "
-            "type *cancel* and start again."
+            "Grok declined to answer that one. Try rewording the idea, or type "
+            "*cancel* and start again."
         )
 
-    # A reply is a list of blocks. We want the text ones.
-    text = "".join(block.text for block in response.content if block.type == "text").strip()
+    text = (choice.message.content or "").strip()
 
     if not text:
-        raise BrainError("Claude sent back an empty reply. Try that message again.")
+        raise BrainError("Grok sent back an empty reply. Try that message again.")
 
     if not want_json:
         return text
@@ -99,7 +126,7 @@ def ask_claude(system: str, user: str, want_json: bool = False) -> str | dict:
 # ---------------------------------------------------------------------------
 def _parse_json(text: str) -> dict:
     """
-    Claude sometimes wraps JSON in a code fence or adds a sentence before it.
+    Grok sometimes wraps JSON in a code fence or adds a sentence before it.
     This digs the actual object out rather than giving up.
     """
     # Strip a ```json ... ``` fence if there is one.
@@ -117,7 +144,7 @@ def _parse_json(text: str) -> dict:
         return json.loads(text)
     except json.JSONDecodeError:
         raise BrainError(
-            "Claude replied in a shape I could not read. Send your message "
+            "Grok replied in a shape I could not read. Send your message "
             "again, it usually works the second time."
         )
 

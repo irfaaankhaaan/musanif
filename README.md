@@ -65,10 +65,25 @@ Open the `.env` file in this folder and paste in your four keys.
 ```
 SLACK_BOT_TOKEN=xoxb-...
 SLACK_APP_TOKEN=xapp-...
-ANTHROPIC_API_KEY=sk-ant-...
+GROK_API_KEY=xai-...
 ZERNIO_API_KEY=sk_...
 DRY_RUN=true
 ```
+
+The writing is done by **Grok**, xAI's model. Get the key from
+**console.x.ai > API keys**; it starts with `xai-`.
+
+If you would rather not pay at all, OpenRouter serves a free Grok. Get a key
+from **openrouter.ai/keys** (it starts with `sk-or-`), paste it in as
+`GROK_API_KEY`, and add these two lines to `.env` as well:
+
+```
+GROK_BASE_URL=https://openrouter.ai/api/v1
+GROK_MODEL=x-ai/grok-4-fast:free
+```
+
+The free tier is rate limited, so the bot may occasionally ask you to wait a
+minute and send your message again. Nothing else changes.
 
 `DRY_RUN=true` means the bot does all the work and shows you the posts but
 publishes nothing. Leave it on until you trust it.
@@ -177,7 +192,7 @@ unchanged: one post, with its hook in the first line as always.
 | File | What it is |
 |---|---|
 | `app.py` | the Slack connection and the router that reads your messages |
-| `config.py` | **every setting and secret.** The Claude model name lives here |
+| `config.py` | **every setting and secret.** The Grok model name lives here |
 | `session.py` | the bot's memory of where you are in the conversation |
 | `rules.py` | the gate. Checks every draft against `voice.md` before you see it |
 | `selftest.py` | runs the logic offline so you can watch it work |
