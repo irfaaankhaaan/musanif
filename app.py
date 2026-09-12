@@ -59,6 +59,21 @@ def say_to(client, channel: str, text: str) -> None:
     print(f"  -> bot: {first_line[:90]}", flush=True)
 
 
+def send_copyable(client, channel: str, text: str) -> None:
+    """
+    Post something on its own, with nothing wrapped around it.
+
+    On a phone you copy a post by long-pressing the message and tapping Copy
+    Text, and that takes the entire message. So a finished post gets a message
+    to itself: no heading, no quote markers, no word count underneath. What you
+    paste into LinkedIn is exactly what you approved, with nothing to tidy up
+    afterwards.
+    """
+    client.chat_postMessage(channel=channel, text=text)
+    first_line = text.split("\n")[0]
+    print(f"  -> bot: [copy-ready] {first_line[:70]}", flush=True)
+
+
 # You subscribed to the "file_shared" event as well as "message.im". Slack fires
 # BOTH when you upload a file. We deliberately handle uploads through the message
 # event instead, because that one also carries any caption you typed with the
@@ -141,6 +156,26 @@ def route(client, user_id: str, channel_id: str, text: str, files: list) -> None
 
     if lowered == "status":
         say_to(client, channel_id, describe_status(live))
+        return
+
+    if lowered == "copy":
+        # Phone-friendly. Long-pressing a message and tapping Copy Text takes
+        # the whole message, so this re-sends each post with nothing around it.
+        if live is None:
+            say_to(client, channel_id, "No session running. Type *new* to start one.")
+            return
+
+        written = [p for p in PLATFORM_LABELS if live.draft(p).text]
+        if not written:
+            say_to(client, channel_id, "Nothing is written yet, so there is nothing to copy.")
+            return
+
+        for platform in written:
+            draft = live.draft(platform)
+            say_to(client, channel_id, f"*{PLATFORM_LABELS[platform]}*, ready to copy:")
+            if draft.hook:
+                send_copyable(client, channel_id, draft.hook)
+            send_copyable(client, channel_id, draft.text)
         return
 
     if lowered == "brief":
@@ -531,14 +566,17 @@ def publish_one(client, channel_id: str, live, platform: str) -> None:
 
     if config.DRY_RUN:
         attached = "no media" if draft.media_skipped else media.describe(draft.media)
+        coming = ("the hook, then the caption" if draft.hook else "the post")
         say_to(
             client,
             channel_id,
             f"*DRY RUN, nothing was published.*\nThis is what would have gone "
-            f"to {label}, with {attached}:\n\n"
-            + (f"_Hook, on the media:_ {draft.hook}\n\n" if draft.hook else "")
-            + draft.text,
+            f"to {label}, with {attached}. Next message is {coming}, on its "
+            "own, so you can copy it straight out on your phone:",
         )
+        if draft.hook:
+            send_copyable(client, channel_id, draft.hook)
+        send_copyable(client, channel_id, draft.text)
         finish_if_done(client, channel_id, live)
         return
 
@@ -736,6 +774,7 @@ HELP_TEXT = (
     "• *write* - stop the questions, write it now\n"
     "• *status* - where are we\n"
     "• *brief* - show the internal content brief\n"
+    "• *copy* - re-send each post on its own, ready to copy on a phone\n"
     "• *cancel* - throw this session away\n"
     "• *skip* - no media for this platform\n\n"
     "There is no set number of questions. If one is off, just say so: "

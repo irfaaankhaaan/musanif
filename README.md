@@ -153,6 +153,7 @@ No reinstall is needed for this one.
 | `write` | stops the questions and writes both posts now |
 | `status` | tells you which phase we are in |
 | `brief` | shows the internal content brief it wrote |
+| `copy` | re-sends each post on its own, ready to copy on a phone |
 | `skip` | no media for the platform it is currently asking about |
 | `cancel` | throws the session away |
 | `help` | the command list |
@@ -196,6 +197,36 @@ invent one.
 
 Both are shown to you together, and Approve covers the pair. LinkedIn is
 unchanged: one post, with its hook in the first line as always.
+
+---
+
+## Using it from your phone
+
+There is nothing to install. The bot lives inside Slack, so it is already on
+the Slack app on your iPhone or Android: open Slack, find the app under **Apps**
+in the sidebar, and DM it exactly as you would on a laptop. Same conversation,
+same buttons, same session. Start on your laptop and finish on your phone if
+you like.
+
+Uploading a photo works too. Tap the **+** next to the message box, pick the
+image, and send it at the step where the bot asks for media.
+
+**Copying the finished post out.** On a phone you copy a message by
+long-pressing it and tapping *Copy Text*, which takes the whole message. So
+every finished post is sent on its own, with no heading above it and no word
+count below, and pasting it into LinkedIn gives you exactly the post with
+nothing to tidy up. Type **`copy`** at any time to have them re-sent that way.
+
+**The one real limit: the bot only runs while your laptop is running it.**
+`run-bot.bat` has to be open, and the laptop awake and online. If it is asleep
+in a bag, messages you send from your phone sit in Slack unanswered until you
+open the laptop again, and then they all arrive at once.
+
+That is a property of running it yourself, not of the phone. If you want it
+answering at any hour, the bot has to live on something that is always on: a
+cheap always-on box at home, or a small cloud host. Nothing in the code needs
+to change for that. Socket Mode means the bot makes an outbound connection to
+Slack, so there is no public web address to set up and no ports to open.
 
 ---
 
