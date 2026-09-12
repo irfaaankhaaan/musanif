@@ -1,0 +1,39 @@
+# Running the bot directly on a Linux server, without Docker.
+#
+#   sudo cp musanif.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now musanif
+#   sudo systemctl status musanif
+#   journalctl -u musanif -f          watch the log
+#
+# Assumes the project is at /opt/musanif, owned by a user called "musanif",
+# with its virtualenv already built:
+#   python3 -m venv /opt/musanif/.venv
+#   /opt/musanif/.venv/bin/pip install -r /opt/musanif/requirements.txt
+
+[Unit]
+Description=Musanif content bot
+Documentation=https://github.com/irfaaankhaaan/musanif
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=musanif
+WorkingDirectory=/opt/musanif
+EnvironmentFile=/opt/musanif/.env
+ExecStart=/opt/musanif/.venv/bin/python -u /opt/musanif/app.py
+
+# Bring it back if it dies, and if the machine reboots.
+Restart=always
+RestartSec=10
+
+# It only needs to write to its own folder.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/musanif/sessions /opt/musanif/media_cache
+
+[Install]
+WantedBy=multi-user.target

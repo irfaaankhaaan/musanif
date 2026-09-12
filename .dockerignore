@@ -1,0 +1,14 @@
+# Keep secrets out of the image. Keys are passed in at run time instead.
+.env
+
+# Rebuilt inside the image, or meaningless in it.
+.venv/
+.git/
+__pycache__/
+*.pyc
+sessions/
+media_cache/
+musanif-*.zip
+
+# Windows-only helpers.
+*.bat

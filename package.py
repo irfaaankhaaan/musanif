@@ -35,7 +35,13 @@ KEY_SHAPES = [
     ("Zernio key", re.compile(r"sk_[A-Za-z0-9]{20,}")),
 ]
 
-TEXT_SUFFIXES = {".py", ".md", ".txt", ".bat", ".example", ".json", ".yml", ".yaml"}
+TEXT_SUFFIXES = {".py", ".md", ".txt", ".bat", ".example", ".json", ".yml", ".yaml",
+                 ".toml", ".service", ".cfg", ".ini"}
+
+# Files with no extension that are still worth scanning. fly.toml and the
+# deployment files are the risky ones: they are committed to git, and it is
+# tempting to paste a key straight into them rather than into secrets.
+TEXT_NAMES = {"Dockerfile", ".dockerignore", "Procfile", "Makefile"}
 
 
 def wanted(path: Path) -> bool:
@@ -53,7 +59,7 @@ def leaked_keys(files: list[Path]) -> list[str]:
     """Anything in these files that looks like a real, live key."""
     found = []
     for path in files:
-        if path.suffix not in TEXT_SUFFIXES:
+        if path.suffix not in TEXT_SUFFIXES and path.name not in TEXT_NAMES:
             continue
         try:
             body = path.read_text(encoding="utf-8", errors="ignore")

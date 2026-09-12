@@ -65,6 +65,7 @@ ON YOUR PHONE
 
   But: the bot only answers while run-bot.bat is open on the computer. If
   that machine is asleep, messages from your phone wait until it wakes up.
+  To have it answer at any hour, see DEPLOY.md.
 
 
 NOTHING IS PUBLISHED UNTIL YOU SAY SO

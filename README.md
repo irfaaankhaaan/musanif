@@ -217,16 +217,18 @@ every finished post is sent on its own, with no heading above it and no word
 count below, and pasting it into LinkedIn gives you exactly the post with
 nothing to tidy up. Type **`copy`** at any time to have them re-sent that way.
 
-**The one real limit: the bot only runs while your laptop is running it.**
+**By default the bot only runs while your laptop is running it.**
 `run-bot.bat` has to be open, and the laptop awake and online. If it is asleep
 in a bag, messages you send from your phone sit in Slack unanswered until you
 open the laptop again, and then they all arrive at once.
 
-That is a property of running it yourself, not of the phone. If you want it
-answering at any hour, the bot has to live on something that is always on: a
-cheap always-on box at home, or a small cloud host. Nothing in the code needs
-to change for that. Socket Mode means the bot makes an outbound connection to
-Slack, so there is no public web address to set up and no ports to open.
+To fix that, move the bot somewhere that stays on. **[DEPLOY.md](DEPLOY.md)**
+covers three routes, all using the code as it is: Docker Compose on a machine
+you own, Fly.io if you have none, or systemd on a Linux VPS.
+
+Socket Mode makes this unusually painless. The bot dials out to Slack and
+nothing dials in, so there is no public address to buy, no domain, no
+certificate and no open port.
 
 ---
 
@@ -257,6 +259,9 @@ has to be created in their own workspace, and keys are per-person.
 | File | What it is |
 |---|---|
 | `START-HERE.txt` | the short version of this file, for whoever you hand it to |
+| `DEPLOY.md` | how to keep the bot running always, so your phone gets answers |
+| `Dockerfile`, `docker-compose.yml` | run it in a container on an always-on machine |
+| `fly.toml`, `musanif.service` | the Fly.io and systemd versions of the same thing |
 | `setup.bat` | **run this first.** Installs everything, sets up your keys |
 | `make-package.bat` | builds the zip you hand to the next person, minus your keys |
 | `app.py` | the Slack connection and the router that reads your messages |

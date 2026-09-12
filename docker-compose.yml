@@ -1,0 +1,38 @@
+# Running the bot on a machine you control: an old laptop, a Raspberry Pi, a
+# home server, or a rented VPS.
+#
+#   docker compose up -d --build   start it, and keep it started
+#   docker compose logs -f         watch what it is doing
+#   docker compose restart         restart it, after editing voice.md
+#   docker compose down            stop it
+#
+# Your keys are read from the .env file sitting next to this one. That file is
+# never copied into the image, it is handed to the container at run time.
+
+services:
+  musanif:
+    build: .
+    container_name: musanif
+    env_file: .env
+
+    # The whole point. Restarts the bot if it crashes, and starts it again
+    # when the machine reboots. "unless-stopped" means a deliberate
+    # "docker compose down" stays down.
+    restart: unless-stopped
+
+    # Named volumes, so your saved sessions survive a rebuild.
+    # To read them:  docker compose cp musanif:/app/sessions ./sessions
+    volumes:
+      - sessions:/app/sessions
+      - media:/app/media_cache
+
+    # Without this, logs grow until they fill the disk. Slowly, but they do.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  sessions:
+  media:

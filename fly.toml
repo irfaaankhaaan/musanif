@@ -1,0 +1,38 @@
+# Fly.io, for when you have no machine of your own that stays on.
+#
+# There is no [http_service] section here and that is deliberate: the bot dials
+# out to Slack, nothing dials in, so it needs no public address. That also
+# means no machine auto-stop, which would have put the bot to sleep between
+# messages.
+#
+# First time:
+#   fly launch --no-deploy --copy-config --name musanif
+#   fly volumes create musanif_sessions --size 1
+#   fly secrets set SLACK_BOT_TOKEN=xoxb-... SLACK_APP_TOKEN=xapp-... \
+#                   GROK_API_KEY=xai-... ZERNIO_API_KEY=sk_...
+#   fly deploy
+#
+# After that:
+#   fly logs        watch it
+#   fly deploy      push a change
+#   fly status      is it up
+
+app = "musanif"
+primary_region = "lhr"          # change to one near you: iad, sjc, fra, sin
+
+[build]
+
+[env]
+  # Keys go in "fly secrets", never here: this file is committed to git.
+  # Flip to "false" only when you are ready to publish for real.
+  DRY_RUN = "true"
+
+# Saved sessions live here, so a redeploy does not lose them.
+[mounts]
+  source = "musanif_sessions"
+  destination = "/app/sessions"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+  cpus = 1
