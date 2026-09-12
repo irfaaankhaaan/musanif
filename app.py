@@ -13,6 +13,7 @@ website, a server, or a public URL. Close the terminal and the bot stops.
 Run it with:  python app.py
 """
 
+import functools
 import sys
 
 # Windows terminals default to a codepage that cannot print characters like the
@@ -123,6 +124,12 @@ def handle_message(event, client, logger):
             "Your session is still here. Type *status* to see where we are, "
             "or *new* to start over.",
         )
+    finally:
+        # One save per message, here rather than scattered through route(), so
+        # no path can advance the session and forget to write it down. In the
+        # error case above we say the session is still here, and this is what
+        # makes that true across a restart as well.
+        session.save()
 
 
 # ---------------------------------------------------------------------------
@@ -366,9 +373,19 @@ def show_review(client, channel_id: str, live, only: str | None = None) -> None:
 def _button(action_id_prefix: str):
     """Register the same handler for both platforms' version of a button."""
     def register(handler):
+        @functools.wraps(handler)
+        def saving(*args, **kwargs):
+            # Same reason as the message handler: one place that cannot be
+            # forgotten, so a press that changes the session is on disk before
+            # we go back to waiting.
+            try:
+                return handler(*args, **kwargs)
+            finally:
+                session.save()
+
         for platform in PLATFORM_LABELS:
-            app.action(f"{action_id_prefix}_{platform}")(handler)
-        return handler
+            app.action(f"{action_id_prefix}_{platform}")(saving)
+        return saving
     return register
 
 
@@ -825,6 +842,12 @@ def main() -> None:
         print(f"  Slack said: {error}")
         print("  Check SLACK_BOT_TOKEN in your .env, then reinstall the app to your workspace.")
         raise SystemExit(1)
+
+    # Pick up a session left behind by the last run, so restarting the bot
+    # mid-interview does not cost you the conversation.
+    resumed = session.restore()
+    if resumed is not None:
+        print(f"Resumed the session that was in progress ({resumed.phase}).")
 
     mode = "DRY RUN - nothing will be published" if config.DRY_RUN else "LIVE - posts will really go out"
     print(f"Content agent starting. Mode: {mode}")

@@ -70,6 +70,16 @@ PROMPTS_DIR = HERE / "prompts"
 SESSIONS_DIR = HERE / "sessions"       # finished sessions get saved here
 MEDIA_DIR = HERE / "media_cache"       # files you upload get downloaded here
 
+# The session you are in the middle of, written to disk after every message so
+# that restarting the bot does not lose the conversation. It sits in
+# SESSIONS_DIR because that is the folder already kept on a volume when the bot
+# is hosted, so persistence needs no extra setup.
+#
+# Finished sessions in there are named after their date and time, and come as a
+# .md and a .json pair, so this fixed name never clashes with one. It is
+# deleted the moment a session is cancelled.
+STATE_FILE = SESSIONS_DIR / "in-progress.json"
+
 for folder in (SESSIONS_DIR, MEDIA_DIR):
     folder.mkdir(exist_ok=True)
 

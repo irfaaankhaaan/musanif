@@ -115,11 +115,16 @@ the bot writes posts and publishes nothing. Change it only when you trust it:
 edit `.env` and restart (Routes A and C), or `fly secrets set DRY_RUN=false`
 (Route B).
 
-**A restart loses the session you are in the middle of.** The interview lives
-in memory, not on disk. If the bot restarts while you are halfway through
-answering questions, your next message gets *"No session running"* and you
-start again with `new`. Finished sessions are already saved and are not
-affected. In practice this only happens when you deploy an update.
+**A restart keeps the session you are in the middle of.** The live session is
+written to `sessions/in-progress.json` after every message and read back on
+startup, so deploying an update mid-interview is invisible: carry on where you
+left off. That folder is on a volume in all three routes above, which is what
+makes it survive.
+
+The one thing that does not survive is a photo you uploaded, if the machine
+does not keep `media_cache` (Fly does not; Docker Compose does). The bot notices
+the file has gone and drops it rather than failing at publish time, so upload it
+again if it matters. Text is never affected.
 
 **Editing `voice.md` needs a restart.** The file is read when a session starts,
 but the container holds its own copy of it. Change it, then
